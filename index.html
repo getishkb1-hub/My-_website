@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZIHON LOGISTICS ዝሆን ሎጀስቲክስ</title>
+    <style>
+        :root {
+            --primary-blue: #1a3a5a;
+            --accent-gold: #d4af37;
+            --light-gray: #f8f9fa;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--light-gray); }
+
+        /* Banner Section */
+        .hero-section { background: var(--primary-blue); text-align: center; color: white; padding-bottom: 10px; }
+        .hero-section img { width: 100%; max-width: 800px; height: auto; border-bottom: 4px solid var(--accent-gold); }
+        
+        /* Tab Bar */
+        .tab-bar { display: flex; sticky: top; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 1000; position: sticky; top: 0; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; font-weight: bold; cursor: pointer; color: #666; font-size: 16px; }
+        .tab-btn.active { color: var(--primary-blue); border-bottom: 4px solid var(--accent-gold); }
+
+        /* Content Area */
+        .container { padding: 15px; max-width: 600px; margin: auto; min-height: 400px; }
+        .card { 
+            background: white; border-radius: 12px; padding: 15px; margin-bottom: 12px; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center;
+            border-left: 5px solid var(--primary-blue);
+        }
+        .info h3 { margin: 0; color: var(--primary-blue); font-size: 17px; }
+        .info p { margin: 5px 0; color: #555; font-size: 14px; }
+        
+        .call-btn { background: #27ae60; color: white; padding: 10px 18px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; }
+        
+        #loading { text-align: center; margin-top: 50px; display: none; }
+    </style>
+</head>
+<body>
+
+<section class="hero-section">
+    <img src="zihon-logo.png" alt="Zihon Logistics ዝሆን ሎጀስቲክስ">
+</section>
+
+<div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('Drivers', this)">መኪናዎች</button>
+    <button class="tab-btn" onclick="switchTab('Loads', this)">ጭነቶች</button>
+</div>
+
+<div class="container">
+    <div id="loading">በመጫን ላይ...</div>
+    <div id="data-list"></div>
+</div>
+
+<script>
+    const sheetId = '1hFgNfwKPt7S8zCfsDS1j8cDnN6zF-sJ_VAqwyd4Cyto';
+
+    // ታቦችን ለመቀየር የሚያገለግል ተግባር
+    async function switchTab(sheetName, element) {
+        // Active button style መቀየር
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        element.classList.add('active');
+
+        const listContainer = document.getElementById('data-list');
+        const loading = document.getElementById('loading');
+        
+        listContainer.innerHTML = '';
+        loading.style.display = 'block';
+
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:json&sheet=${sheetName}`;
+
+        try {
+            const response = await fetch(url);
+            const text = await response.text();
+            const json = JSON.parse(text.substr(47).slice(0, -2));
+            const rows = json.table.rows;
+
+            loading.style.display = 'none';
+
+            if (rows.length === 0) {
+                listContainer.innerHTML = '<p style="text-align:center">ምንም መረጃ የለም።</p>';
+                return;
+            }
+
+            rows.forEach(row => {
+                const col1 = row.c[0] ? row.c[0].v : "መረጃ የለም";
+                const col2 = row.c[1] ? row.c[1].v : "---";
+                const phone = row.c[2] ? row.c[2].v : "";
+
+                // ለ Drivers እና ለ Loads የተለያየ ፅሁፍ ለማሳየት
+                const label = (sheetName === 'Drivers') ? 'የመኪና ዓይነት' : 'የጭነት ዓይነት/መድረሻ';
+
+                listContainer.innerHTML += `
+                    <div class="card">
+                        <div class="info">
+                            <h3>${col1}</h3>
+                            <p>📍 ${label}፦ ${col2}</p>
+                        </div>
+                        ${phone ? `<a href="tel:${phone}" class="call-btn">📞 ይደውሉ</a>` : ''}
+                    </div>
+                `;
+            });
+        } catch (e) {
+            loading.innerText = "ስህተት ተፈጥሯል! እባክዎ ኢንተርኔትዎን ይፈትሹ።";
+        }
+    }
+
+    // ገጹ መጀመሪያ ሲከፈት Driversን እንዲያመጣ
+    window.onload = () => {
+        switchTab('Drivers', document.querySelector('.tab-btn.active'));
+    };
+</script>
+
+</body>
+</html>
